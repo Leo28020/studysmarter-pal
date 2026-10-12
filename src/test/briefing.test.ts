@@ -14,7 +14,7 @@ describe('Morning briefing', () => {
   });
   it('fits 45-minute sessions with 10-minute breaks into the available time', () => {
     const slots = buildSchedule(prioritize(checkIn, '2026-10-13'), '09:00', 120);
-    expect(slots.map(s => `${s.start}-${s.end}`)).toEqual(['09:00-09:45', '09:55-10:40', '10:50-11:00']);
+    expect(slots.map(s => `${s.start}-${s.end}`)).toEqual(['09:00-09:45', '09:55-10:40']);
   });
   it('schedules nothing when less than 15 minutes are available', () => {
     expect(buildSchedule(prioritize(checkIn, '2026-10-13'), '09:00', 10)).toHaveLength(0);
