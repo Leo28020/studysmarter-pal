@@ -1,4 +1,4 @@
-export type Task = { id: string; title: string; subject: string; time: string; minutes: number; priority: 'High' | 'Medium' | 'Low'; done: boolean; tone: string; due: string };
+export type Task = { id: string; title: string; subject: string; time: string; minutes: number; priority: 'High' | 'Medium' | 'Low'; done: boolean; tone: string; due: string; source?: 'session' };
 export const initialTasks: Task[] = [
   { id: '1', title: 'Review limits & continuity', subject: 'Mathematics', time: '09:00 – 09:45', minutes: 45, priority: 'High', done: true, tone: 'lavender', due: '2026-10-12' },
   { id: '2', title: 'Practice data structures', subject: 'Computer Science', time: '11:00 – 12:00', minutes: 60, priority: 'High', done: false, tone: 'blue', due: '2026-10-12' },
@@ -40,3 +40,11 @@ export function scoreAnswers(questions: Question[], answers: number[]) {
  return Math.round(questions.filter((q, i) => q.answer === answers[i]).length / questions.length * 100);
 }
 export function toggleTask(tasks: Task[], id: string) { return tasks.map(task => task.id === id ? { ...task, done: !task.done } : task); }
+
+// Demo-only dashboard content. Replace with saved user data once storage exists.
+export const yesterdayUnfinished = [
+ { title: 'Summarize Physics lecture 6', subject: 'Physics' },
+ { title: 'Outline literature essay', subject: 'English Literature' },
+];
+export const lastStudied = { subject: 'Mathematics', topic: 'Limits & continuity', module: 'Module 1 of 4', progress: 68, when: 'Yesterday, 8:40 PM' };
+export const weeklyHours = [1.2, 1.8, 1.5, 2.2, 1.7, 2.6, 1.5];

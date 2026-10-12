@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BriefingRouteImport } from './routes/briefing'
+import { Route as CheckInRouteImport } from './routes/check-in'
 import { Route as NotesRouteImport } from './routes/notes'
 import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as ProgressRouteImport } from './routes/progress'
@@ -20,6 +22,16 @@ import { Route as SubjectsRouteImport } from './routes/subjects'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BriefingRoute = BriefingRouteImport.update({
+  id: '/briefing',
+  path: '/briefing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckInRoute = CheckInRouteImport.update({
+  id: '/check-in',
+  path: '/check-in',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotesRoute = NotesRouteImport.update({
@@ -55,6 +67,8 @@ const SubjectsRoute = SubjectsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/briefing': typeof BriefingRoute
+  '/check-in': typeof CheckInRoute
   '/notes': typeof NotesRoute
   '/planner': typeof PlannerRoute
   '/progress': typeof ProgressRoute
@@ -64,6 +78,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/briefing': typeof BriefingRoute
+  '/check-in': typeof CheckInRoute
   '/notes': typeof NotesRoute
   '/planner': typeof PlannerRoute
   '/progress': typeof ProgressRoute
@@ -74,6 +90,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/briefing': typeof BriefingRoute
+  '/check-in': typeof CheckInRoute
   '/notes': typeof NotesRoute
   '/planner': typeof PlannerRoute
   '/progress': typeof ProgressRoute
@@ -85,6 +103,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/briefing'
+    | '/check-in'
     | '/notes'
     | '/planner'
     | '/progress'
@@ -94,6 +114,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/briefing'
+    | '/check-in'
     | '/notes'
     | '/planner'
     | '/progress'
@@ -103,6 +125,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/briefing'
+    | '/check-in'
     | '/notes'
     | '/planner'
     | '/progress'
@@ -113,6 +137,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BriefingRoute: typeof BriefingRoute
+  CheckInRoute: typeof CheckInRoute
   NotesRoute: typeof NotesRoute
   PlannerRoute: typeof PlannerRoute
   ProgressRoute: typeof ProgressRoute
@@ -128,6 +154,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/briefing': {
+      id: '/briefing'
+      path: '/briefing'
+      fullPath: '/briefing'
+      preLoaderRoute: typeof BriefingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/check-in': {
+      id: '/check-in'
+      path: '/check-in'
+      fullPath: '/check-in'
+      preLoaderRoute: typeof CheckInRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notes': {
@@ -177,6 +217,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BriefingRoute: BriefingRoute,
+  CheckInRoute: CheckInRoute,
   NotesRoute: NotesRoute,
   PlannerRoute: PlannerRoute,
   ProgressRoute: ProgressRoute,
