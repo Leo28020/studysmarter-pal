@@ -1,23 +1,126 @@
+import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowRight, ArrowUpRight, BookOpen, CheckCheck, Clock3, Flame, Sparkles, CircleHelp, CalendarPlus, ChevronRight, Target, TrendingUp } from 'lucide-react';
+import { ArrowRight, CalendarDays, Clock3, Moon, Play, Plus, Sunrise, Target, History, Flag } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { PageHeading, SectionHeading, TaskRow } from './shared';
+import { SectionHeading, SubjectIcon, TaskRow } from './shared';
+import { DataTag, ProgressRing, greetingFor, useNow } from './extras';
 import { useStudy } from '@/features/study/study-context';
-import { deadlines } from '@/features/study/demo';
-import illustration from '@/assets/study-illustration.jpg';
-const activity = [ { day: 'Mon', height: 42 }, { day: 'Tue', height: 67 }, { day: 'Wed', height: 52 }, { day: 'Thu', height: 82 }, { day: 'Fri', height: 64 }, { day: 'Sat', height: 93 }, { day: 'Sun', height: 47 } ];
+import { deadlines, lastStudied, subjects, weeklyHours, yesterdayUnfinished } from '@/features/study/demo';
+
+const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const rank = { High: 0, Medium: 1, Low: 2 } as const;
+
 export function Dashboard() {
- const { tasks, results } = useStudy();
- const completed = tasks.filter(task => task.done).length;
- const average = Math.round(results.reduce((sum, item) => sum + item.score, 0) / results.length);
- return <>
- <PageHeading title="Good morning, Alex ☀️" subtitle="A fresh start, a focused mind. Let’s make today count." action={<div className="today-date"><CalendarPlus size={16} />Monday, October 12</div>} />
- <section className="welcome-banner"><div className="welcome-copy"><span className="eyebrow"><Sparkles size={14} />YOUR STUDY CO-PILOT</span><h2>A little focus.<br />A lot of possibility.</h2><p>You have {tasks.filter(t => !t.done).length} tasks left today. One step at a time,<br className="desktop-break" /> you’re getting closer to your goals.</p><Button asChild><Link to="/planner">Let’s get studying <ArrowRight size={16} /></Link></Button></div><img src={illustration} alt="Pastel books, a notebook and pencils with a floating lavender planet" width={1024} height={768} /><span className="banner-label">You’ve got this, Alex.</span></section>
- <div className="stats-grid"><Stat icon={Clock3} tone="lavender" label="Study time this week" value="12.5" unit="hrs" detail="2.5 hrs more than last week" /><Stat icon={CheckCheck} tone="blue" label="Tasks completed today" value={String(completed).padStart(2, '0')} unit={`/ ${tasks.length}`} detail="Keep the momentum going" /><Stat icon={Target} tone="mint" label="Average quiz score" value={String(average)} unit="%" detail="Across your demo quizzes" /><Stat icon={Flame} tone="peach" label="Current study streak" value="07" unit="days" detail="Your best streak is 12 days" /></div>
- <div className="dashboard-columns"><section className="panel study-plan"><SectionHeading title="Today’s study plan" detail="A little structure for a productive day." to="/planner" /><div className="plan-progress"><span>{completed} of {tasks.length} tasks completed</span><span>{Math.round(completed / tasks.length * 100)}%</span><div className="progress-track"><progress max={tasks.length} value={completed} /></div></div><div className="task-list">{tasks.slice(0, 4).map(task => <TaskRow key={task.id} task={task} />)}</div><Link className="panel-bottom-link" to="/planner"><CalendarPlus size={15} />Manage your study plan<ChevronRight size={15} /></Link></section>
- <section className="panel weekly-panel"><SectionHeading title="Your weekly rhythm" detail="Every session is a step forward." /><div className="weekly-total"><strong>12.5 <span>hours</span></strong><span className="growth"><TrendingUp size={13} /> 25%</span></div><div className="chart"><div className="chart-grid"><span>4h</span><span>2h</span><span>0h</span></div><div className="chart-bars">{activity.map((item, i) => <div className="chart-column" key={item.day}><div className={`chart-bar chart-bar-${i}`} title={`${item.day}: ${[1.2, 1.8, 1.5, 2.2, 1.7, 2.6, 1.5][i]} hours`} /><span>{item.day}</span></div>)}</div></div><div className="weekly-insight"><span className="tone-lavender insight-icon"><Sparkles size={15} /></span><p><strong>Consistency looks good on you.</strong><br />You studied on all 7 days last week!</p></div></section></div>
- <div className="dashboard-columns bottom-columns"><section className="panel deadlines-panel"><SectionHeading title="Coming up next" detail="Stay one step ahead of your deadlines." to="/planner" /><div>{deadlines.map(deadline => <div className="deadline-row" key={deadline.title}><div className={`date-tile tone-${deadline.tone}`}><span>{deadline.month}</span><strong>{deadline.day}</strong></div><div className="deadline-copy"><h3>{deadline.title}</h3><p>{deadline.subject}</p></div><span className={`deadline-label ${deadline.day === '14' ? 'deadline-soon' : ''}`}>{deadline.label}</span></div>)}</div></section><section className="quick-section"><SectionHeading title="A shortcut to your next step" detail="Less planning. More doing." /><div className="quick-actions"><Quick to="/notes" icon={Sparkles} title="AI Notes" subtitle="Your topics, simplified" tone="lavender" /><Quick to="/quiz" icon={CircleHelp} title="Take a quiz" subtitle="Put your knowledge to work" tone="blue" /><Quick to="/subjects" icon={BookOpen} title="My subjects" subtitle="Pick up where you left off" tone="mint" /></div></section></div>
- </>;
+ const { tasks, checkIn } = useStudy();
+ const now = useNow();
+ const done = tasks.filter(t => t.done).length;
+ const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
+ const priorities = tasks.filter(t => !t.done).sort((a, b) => rank[a.priority] - rank[b.priority]).slice(0, 3);
+ const minutesLeft = tasks.filter(t => !t.done).reduce((s, t) => s + t.minutes, 0);
+ const carried = checkIn ? checkIn.unfinished.map(title => ({ title, subject: 'From your check-in', saved: true })) : yesterdayUnfinished.map(i => ({ ...i, saved: false }));
+ const maxHours = Math.max(...weeklyHours);
+
+ return <div className="dash">
+  <header className="dash-hello">
+   <div>
+    <p className="dash-date">{now ? now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : '\u00a0'}</p>
+    <h1>{greetingFor(now)}, Alex.</h1>
+    <p className="dash-sub">One clear mission, a calm pace, and steady progress.</p>
+   </div>
+   <div className="dash-hello-actions">
+    <Button asChild variant="outline"><Link to="/briefing"><Sunrise size={16} />Morning briefing</Link></Button>
+    <Button asChild><Link to="/check-in"><Moon size={16} />Night check-in</Link></Button>
+   </div>
+  </header>
+
+  <section className="mission card-rise" aria-labelledby="mission-title">
+   <div className="mission-main">
+    <div className="mission-eyebrow"><Target size={14} /><span id="mission-title">YOUR MISSION TODAY</span><DataTag kind="demo" /></div>
+    <h2>{priorities.length ? `${priorities.length} priorities between you and a great day.` : 'Every task is done. Beautiful work.'}</h2>
+    <ol className="mission-list">{priorities.map((t, i) => <li key={t.id}><span className="mission-num">{i + 1}</span><div><strong>{t.title}</strong><span>{t.subject} · {t.time} · {t.minutes} min</span></div><span className={`priority priority-${t.priority.toLowerCase()}`}>{t.priority}</span></li>)}</ol>
+    <div className="mission-meta">
+     <span><Clock3 size={14} />{Math.floor(minutesLeft / 60)}h {minutesLeft % 60}m of study left</span>
+     <span><CalendarDays size={14} />{tasks.length} sessions planned</span>
+     <span className="mission-deadline"><Flag size={14} />{deadlines[0].title} · {deadlines[0].label.toLowerCase()}</span>
+    </div>
+   </div>
+   <div className="mission-side">
+    <ProgressRing value={pct} label="complete" />
+    <p>{done} of {tasks.length} tasks done</p>
+    <Button asChild variant="outline" size="sm"><Link to="/planner">Open planner <ArrowRight size={14} /></Link></Button>
+   </div>
+  </section>
+
+  <div className="dash-grid">
+   <section className="panel continue card-rise">
+    <div className="panel-top"><h2>Continue learning</h2><DataTag kind="demo" /></div>
+    <div className="continue-body">
+     <SubjectIcon subject={lastStudied.subject} tone="lavender" />
+     <div className="min-w-0"><h3>{lastStudied.topic}</h3><p>{lastStudied.subject} · {lastStudied.module}</p><p className="muted-small">Last studied {lastStudied.when}</p></div>
+    </div>
+    <div className="bar"><span style={{ width: `${lastStudied.progress}%` }} /></div>
+    <div className="continue-foot"><span>{lastStudied.progress}% of course</span><Button asChild size="sm"><Link to="/subjects"><Play size={14} />Resume</Link></Button></div>
+   </section>
+
+   <section className="panel night-card card-rise">
+    <Moon size={22} className="night-icon" />
+    <h2>Plan tomorrow tonight</h2>
+    <p>A five-minute guided check-in: what you finished, what carries over, and the time you have tomorrow.</p>
+    <div className="night-foot">
+     {checkIn ? <DataTag kind="session" /> : <span className="muted-small">No check-in yet tonight</span>}
+     <Button asChild><Link to="/check-in">{checkIn ? 'Edit check-in' : 'Start check-in'} <ArrowRight size={14} /></Link></Button>
+    </div>
+   </section>
+
+   <QuickAdd />
+
+   <section className="panel card-rise">
+    <SectionHeading title="Upcoming deadlines" to="/planner" />
+    <DataTag kind="demo" />
+    <ul className="deadline-list">{deadlines.map((d, i) => <li key={d.title} className={i === 0 ? 'is-urgent' : ''}><div className="date-chip"><span>{d.month}</span><strong>{d.day}</strong></div><div className="min-w-0"><h3>{d.title}</h3><p>{d.subject}</p></div><span className="deadline-when">{d.label}</span></li>)}</ul>
+   </section>
+
+   <section className="panel card-rise">
+    <div className="panel-top"><h2><History size={16} />Unfinished from yesterday</h2><DataTag kind={checkIn ? 'session' : 'demo'} /></div>
+    {carried.length ? <ul className="carry-list">{carried.map(c => <li key={c.title}><span className="carry-dot" /><div><h3>{c.title}</h3><p>{c.subject}</p></div></li>)}</ul> : <p className="muted-small">Nothing carried over. Clean slate.</p>}
+    <Link to="/check-in" className="subtle-link">Move these into tomorrow <ArrowRight size={13} /></Link>
+   </section>
+
+   <section className="panel week card-rise">
+    <div className="panel-top"><h2>This week</h2><DataTag kind="demo" /></div>
+    <div className="week-total"><strong>{weeklyHours.reduce((a, b) => a + b, 0).toFixed(1)}</strong><span>hours studied</span></div>
+    <div className="week-bars">{weeklyHours.map((h, i) => <div key={days[i]} className="week-col" title={`${days[i]}: ${h} hours`}><div className="week-bar" style={{ height: `${(h / maxHours) * 100}%`, animationDelay: `${i * 60}ms` }} data-top={h === maxHours} /><span>{days[i][0]}</span></div>)}</div>
+   </section>
+  </div>
+
+  <section className="panel card-rise">
+   <SectionHeading title="Today’s sessions" detail="Tick off sessions as you go — changes last for this visit only." to="/planner" />
+   <div className="task-list">{tasks.map(t => <TaskRow key={t.id} task={t} />)}</div>
+  </section>
+ </div>;
 }
-function Stat({ icon: Icon, tone, label, value, unit, detail }: { icon: typeof Clock3; tone: string; label: string; value: string; unit: string; detail: string }) { return <div className="stat-card"><div className="stat-top"><span className={`stat-icon tone-${tone}`}><Icon size={19} strokeWidth={1.7} /></span><span className="stat-trend"><ArrowUpRight size={15} /></span></div><p>{label}</p><div className="stat-value">{value}<span>{unit}</span></div><span className="stat-detail">{detail}</span></div>; }
-function Quick({ to, icon: Icon, title, subtitle, tone }: { to: '/notes' | '/quiz' | '/subjects'; icon: typeof Sparkles; title: string; subtitle: string; tone: string }) { return <Link className="quick-action" to={to}><span className={`subject-icon tone-${tone}`}><Icon size={18} /></span><div><h3>{title}</h3><p>{subtitle}</p></div><ArrowUpRight size={17} /></Link>; }
+
+function QuickAdd() {
+ const { addTask } = useStudy();
+ const [title, setTitle] = useState('');
+ const [subject, setSubject] = useState(subjects[0].name);
+ function submit(e: React.FormEvent) {
+  e.preventDefault();
+  if (!title.trim()) return;
+  addTask({ title: title.trim(), subject, minutes: 30, priority: 'Medium', due: new Date().toISOString().slice(0, 10) });
+  toast.success('Task added for this session', { description: 'It is not saved permanently yet.' });
+  setTitle('');
+ }
+ return <form className="panel quick-add card-rise" onSubmit={submit}>
+  <h2><Plus size={16} />Quick add task</h2>
+  <label className="sr-only" htmlFor="qa-title">Task</label>
+  <input id="qa-title" placeholder="e.g. Review lecture 7 notes" value={title} onChange={e => setTitle(e.target.value)} maxLength={120} />
+  <div className="quick-add-row">
+   <label className="sr-only" htmlFor="qa-subject">Subject</label>
+   <select id="qa-subject" value={subject} onChange={e => setSubject(e.target.value)}>{subjects.map(s => <option key={s.name}>{s.name}</option>)}</select>
+   <Button type="submit" disabled={!title.trim()}>Add</Button>
+  </div>
+  <p className="muted-small">Added tasks stay until you refresh the page.</p>
+ </form>;
+}
