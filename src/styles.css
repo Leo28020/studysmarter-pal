@@ -148,3 +148,5 @@ progress::-moz-progress-bar { background:var(--gold); }
 @media(max-width:1100px) { .dash-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:760px) { .mission { grid-template-columns:1fr; padding:22px; } .mission-side { border-left:0; border-top:1px solid oklch(1 0 0 / .08); padding:20px 0 0; } .dash-grid, .brief-grid { grid-template-columns:1fr; } .review > div { grid-template-columns:1fr; gap:4px; } .stepper li { font-size:0; gap:0; justify-content:center; } .inline-add { flex-wrap:wrap; } .date-input { max-width:none; } .mission-list .priority { display:none; } }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { transition:none !important; animation:none !important; } }
+
+.ring { border:0 !important; outline:0; background:none !important; } .ring svg { display:block; border:0; }
